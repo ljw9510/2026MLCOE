@@ -7,7 +7,7 @@ This repository contains the required code and documentation for the Machine Lea
 
 This repository contains the solution code and project report for **Part 1: From Classical Filters to Particle Flows** of the JP Morgan MLCOE TSRL 2026 Internship assessment.
 
-The project explores the evolution of State Space Model (SSM) filtering, starting from foundational Gaussian approximations and sequential Monte Carlo methods, and culminating in advanced, high-dimensional **Particle Flow Filters (PFF)**. The implementation focuses on numerical stability, particle degeneracy mitigation, and the application of invertible and kernel-based flows.
+The project explores the evolution of State Space Model (SSM) filtering, starting from foundational Gaussian approximations and Sequential Monte Carlo methods, and culminating in advanced, high-dimensional **Particle Flow Filters (PFF)**. The implementation focuses on numerical stability, particle degeneracy mitigation, and the application of invertible and kernel-based flows.
 
 ## Repository Contents
 
