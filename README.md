@@ -22,7 +22,11 @@ The project explores the evolution of State Space Model (SSM) filtering, startin
     * **Range-Bearing Model:** A standard nonlinear tracking benchmark.
     * **Acoustic Tracking Model:** A high-dimensional (16D state, 25D obs) multi-target tracking scenario used in Li & Coates (2017).
 * **`test_filters.py`**: Integration tests ensuring the correctness of the filter pipelines and their compatibility with the SSM models.
-
+* **`test_ssm_models.py`**: Unit tests for the State Space Models. It validates:
+    * **Data Generation:** Ensures correct tensor shapes and types for states and observations.
+    * **Measurement Consistency:** Verifies that measurement functions (e.g., range/bearing logic) are physically correct.
+    * **Jacobian Correctness:** Crucially verifies that the analytical/manual Jacobian implementations match TensorFlow's automatic differentiation (`GradientTape`), ensuring the accuracy of linearized filters (EKF, EDH, LEDH).
+      
 ### 🧪 Experiment Scripts
 
 #### Literature Replication
