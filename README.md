@@ -17,22 +17,39 @@ The project is organized into a modular package structure to support both classi
 ```
 jpm_pff_project/
 ├── src/
-│   ├── filters/                 # Bayesian Filtering Library
-│   │   ├── classical.py         # Foundational Gaussian-based filters
-│   │   ├── particle.py          # Sequential Monte Carlo (SMC) methods
-│   │   ├── flow_filters.py      # Advanced Particle Flow implementations
-│   │   ├── stochastic_flow_filters.py  # SPF and LEDH with optimized schedules
-│   │   ├── DPF.py               # Modular Differentiable PF Orchestrator
-│   │   └── dpfpf.py             # Differentiable Particle Flow Filter core
-│   └── inference/               # Parameter Estimation Engines
-│       ├── phmc.py              # Particle Hamiltonian Monte Carlo
-│       └── pmmh.py              # Particle Marginal Metropolis-Hastings
+│   ├── filters/                      # Bayesian Filtering Library
+│   │   ├── classical.py              # Foundational Gaussian-based filters (KF, EKF, UKF, ESRF)
+│   │   ├── DPF.py                    # Differentiable Particle Filter core
+│   │   ├── dpfpf.py                  # Differentiable Particle Flow Particle Filter core
+│   │   ├── flow_filters.py           # Particle Flow implementations (EDH, LEDH)
+│   │   ├── particle.py               # Sequential Monte Carlo (SMC) methods (BPF, GSMC, UPF)
+│   │   ├── stochastic_flow_filter.py # SPF and LEDH with optimized schedules (SPF, LEDH+Optimal Homotopy)
+│   │   ├── flows/                    # Particle Flow Vector Field Subroutines
+│   │   │   ├── dai_homotopy.py       # BVP solvers for optimal schedules
+│   │   │   ├── EDH.py                # Exact Daum-Huang global flow logic
+│   │   │   ├── kernel.py             # Kernel-Embedded PFF (Matrix/Scalar)
+│   │   │   ├── LEDH.py               # Local Exact Daum-Huang pointwise flow
+│   │   │   └── stochastic.py         # Stochastic Particle Flow (SPF) vector fields
+│   │   └── resampling/               # Differentiable Resampling Subroutines
+│   │       ├── optimal_transport.py  # Sinkhorn/EOT and OT-based transport maps
+│   │       ├── soft.py               # Differentiable soft-resampling logic
+│   │       └── transformer.py        # Particle Transformer resampling priors
+│   ├── inference/                    # Parameter Estimation Engines
+│   │   ├── phmc.py                   # Particle Hamiltonian Monte Carlo (PHMC)
+│   │   └── pmmh.py                   # Particle Marginal Metropolis-Hastings (PMMH)
+│   └── models/                       # State Space Model (SSM) Library
+│       ├── base_ssm.py               # Abstract base classes for SSM implementations
+│       ├── classic_ssm.py            # SSMs with known transition dynamics and measurement models 
+│       └── neural_ssm.py             # GRU/LSTM based transition and likelihood models
+├── experiments/                      # Benchmarking & Validation Scripts
+│   # (Categorized scripts for Replication, Benchmarking, and DPF Analysis)
 ├── tests/
-│   ├── unit/                    # Mathematical Invariant Verification
-│   │   └── test_unit_math.py    # Unit tests for core math & logic
-│   └── integration/             # Pipeline & Gradient Stability
+│   ├── unit/                         # Mathematical Invariant Verification
+│   │   └── test_unit_math.py         # Unit tests for core math & logic
+│   └── integration/                  # Pipeline & Gradient Stability
 │       └── test_integration_system.py # End-to-end integration tests
-└── Project_Report.pdf           # Comprehensive Final Report
+└── Project_Report.pdf                # Comprehensive Final Report
+
 ```
 
 ## 📄 File Descriptions
