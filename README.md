@@ -48,7 +48,7 @@ jpm_pff_project/
 │   │   └── test_unit_math.py         # Unit tests for core math & logic
 │   └── integration/                  # Pipeline & Gradient Stability
 │       └── test_integration_system.py # End-to-end integration tests
-└── Project_Report.pdf                # Comprehensive Final Report
+└── full_report.pdf                   # Comprehensive Final Report
 
 ```
 
