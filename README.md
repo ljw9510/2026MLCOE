@@ -1,32 +1,85 @@
 # 🚀 MLCOE Summer Associate Internship Assessment (2026)
 
-This repository contains the required code and documentation for the Machine Learning Center of Excellence (MLCOE) 2026 Summer Associate Internship assessment, focused on Time Series and Reinforcement Learning (RL).
-
+This repository contains the required code and documentation for the Machine Learning Center of Excellence (MLCOE) 2026 Summer Associate Internship assessment, focused on Time Series and Reinforcement Learning (TSRL).
 
 ## Overview
 
-This repository contains the solution code and project report for **Part 1: From Classical Filters to Particle Flows** of the JP Morgan MLCOE TSRL 2026 Internship assessment.
+This repository contains the solution code and project report for **Part 1: From Classical Filters to Particle Flows** and **Part 2: Differentiable Sequential Monte Carlo**.
 
-The project explores the evolution of State Space Model (SSM) filtering, starting from foundational Gaussian approximations and Sequential Monte Carlo methods, and culminating in advanced, high-dimensional **Particle Flow Filters (PFF)**. The implementation focuses on numerical stability, particle degeneracy mitigation, and the application of invertible and kernel-based flows.
+The project explores the evolution of State Space Model (SSM) filtering, starting from foundational Gaussian approximations and Sequential Monte Carlo (SMC) methods, and culminating in advanced, high-dimensional **Particle Flow Filters (PFF)**. The implementation focuses on numerical stability, particle degeneracy mitigation, and the application of invertible and kernel-based flows to enable end-to-end differentiable parameter inference.
 
-## Repository Contents
+---
 
-### 📚 Core Libraries
-* **`filters.py`**: A complete, vectorized TensorFlow implementation of Bayesian Filters. It includes classical methods (KF, EKF, UKF) and advanced particle flows:
-    * **Classical:** Kalman Filter (KF), Extended KF (EKF), Unscented KF (UKF), Ensemble Square Root Filter (ESRF).
-    * **Particle Filters:** Bootstrap Particle Filter (BPF), Unscented Particle Filter (UPF), Gaussian Sum Monte Carlo (GSMC).
-    * **Particle Flows:** Exact Daum-Huang (EDH), Local Exact Daum-Huang (LEDH), and the **Invertible Particle Flow Particle Filter (PFPF)** variants.
-    * **Kernel Flows:** Kernel-Embedded Particle Flow Filter (KPFF) with support for both scalar and matrix-valued kernels.
-* **`ssm_models.py`**: Defines the State Space Models used for experiments, including Jacobians and measurement functions:
-    * **Stochastic Volatility Model:** A nonlinear 1D model for financial time series.
-    * **Range-Bearing Model:** A standard nonlinear tracking benchmark.
-    * **Acoustic Tracking Model:** A high-dimensional (16D state, 25D obs) multi-target tracking scenario used in Li & Coates (2017).
-* **`test_filters.py`**: Integration tests ensuring the correctness of the filter pipelines and their compatibility with the SSM models.
-* **`test_ssm_models.py`**: Unit tests for the State Space Models. It validates:
-    * **Data Generation:** Ensures correct tensor shapes and types for states and observations.
-    * **Measurement Consistency:** Verifies that measurement functions (e.g., range/bearing logic) are physically correct.
-    * **Jacobian Correctness:** Crucially verifies that the analytical/manual Jacobian implementations match TensorFlow's automatic differentiation (`GradientTape`), ensuring the accuracy of linearized filters (EKF, EDH, LEDH).
-      
+## 📂 Repository Structure
+
+The project is organized into a modular package structure to support both classical filtering and differentiable deep-learning integration.
+
+```
+jpm_pff_project/
+├── src/
+│   ├── filters/                 # Bayesian Filtering Library
+│   │   ├── classical.py         # Foundational Gaussian-based filters
+│   │   ├── particle.py          # Sequential Monte Carlo (SMC) methods
+│   │   ├── flow_filters.py      # Advanced Particle Flow implementations
+│   │   ├── stochastic_flow_filters.py  # SPF and LEDH with optimized schedules
+│   │   ├── DPF.py               # Modular Differentiable PF Orchestrator
+│   │   └── dpfpf.py             # Differentiable Particle Flow Filter core
+│   └── inference/               # Parameter Estimation Engines
+│       ├── phmc.py              # Particle Hamiltonian Monte Carlo
+│       └── pmmh.py              # Particle Marginal Metropolis-Hastings
+├── tests/
+│   ├── unit/                    # Mathematical Invariant Verification
+│   │   └── test_unit_math.py    # Unit tests for core math & logic
+│   └── integration/             # Pipeline & Gradient Stability
+│       └── test_integration_system.py # End-to-end integration tests
+└── Project_Report.pdf           # Comprehensive Final Report
+```
+
+## 📄 File Descriptions
+
+### 📚 Bayesian Filtering Core (`src/filters/`)
+
+* **`classical.py`**: Implementation of foundational filters using `float64` arithmetic globally to prevent numerical drift on high-performance architectures like the Apple M1 Ultra. Includes the **Kalman Filter (KF)** with Joseph-form updates, the **Extended Kalman Filter (EKF)**, the **Unscented Kalman Filter (UKF)** using stable eigen-decomposition sigma points, and the **Ensemble Square Root Filter (ESRF)**.
+* **`particle.py`**: Implements SMC methods for non-linear/non-Gaussian state estimation, including the **Bootstrap Particle Filter (BPF)**, the **Unscented Particle Filter (UPF)** for reduced degeneracy, and **Gaussian Sum Monte Carlo (GSMC)** which bridges deterministic and stochastic filtering.
+* **`flow_filters.py`**: Advanced filters that transport particles deterministically toward the posterior to avoid the "curse of dimensionality". Includes **Exact Daum-Huang (EDH)**, **Local EDH (LEDH)**, and the **Kernel Particle Flow Filter (KPFF)** utilizing functional gradient descent in RKHS.
+* **`stochastic_flow_filters.py`**: Focuses on **Stochastic Particle Flow (SPF)** and localized flows utilizing optimized integration schedules (Dai, 2022) to mitigate numerical stiffness in high-stiffness regimes.
+* **`DPF.py`**: A modular orchestrator for **Differentiable Particle Filters**. It decouples filtering logic from resampling subroutines, allowing the use of Neural (Transformer), Soft, or Optimal Transport (Sinkhorn) strategies.
+* **`dpfpf.py`**: Implements the **Differentiable Particle Flow Particle Filter (dPFPF)**, which ensures that the marginal likelihood estimate is a differentiable function of model parameters. It serves as the likelihood engine for gradient-based inference methods.
+
+### 🧠 Inference Engines (`src/inference/`)
+
+* **`phmc.py`**: Implements **Particle Hamiltonian Monte Carlo (PHMC)** for efficient parameter estimation. It utilizes the `dPFPF` to obtain likelihood gradients via automatic differentiation, outperforming random-walk MCMC in high-dimensional spaces.
+* **`pmmh.py`**: Implements **Particle Marginal Metropolis-Hastings (PMMH)**, targeting the exact posterior by replacing intractable likelihoods with unbiased estimates from a Particle Filter.
+
+### 🧪 Validation Suite (`tests/`)
+
+* **`test_unit_math.py`**: Verifies strict mathematical constraints such as mass conservation in Sinkhorn transport, unbiasedness in soft resampling, and moment reconstruction in UKF sigma points.
+* **`test_integration_system.py`**: Ensures end-to-end pipeline stability, including gradient flow from system parameters back to likelihood outputs and verifying MCMC stationary distribution targeting.
+
+
+## 🚀 Getting Started
+
+### 1. Installation
+Ensure you have a Python 3.10+ environment.
+```
+git clone [https://github.com/ljw9510/2026MLCOE.git](https://github.com/ljw9510/2026MLCOE.git)
+cd 2026MLCOE
+pip install -r requirements.txt
+```
+
+### 2. Running Tests
+Tests are configured to run on CPU by default to ensure stability on hardware architectures with specific Metal/GPU precision constraints.
+```
+# Run Unit Tests
+python tests/unit/test_unit_math.py
+
+# Run Integration Tests
+python tests/integration/test_integration_system.py
+```
+
+### 3. Hardware Optimization Note
+The project enforces high-precision `tf.float64` globally to maintain numerical stability during long sequential filtering operations. The test suite explicitly manages device placement to prevent colocation errors during complex graph executions involving Hamiltonian and Sinkhorn subroutines.
+
 ### 🧪 Experiment Scripts
 
 #### Literature Replication
@@ -49,71 +102,60 @@ The project explores the evolution of State Space Model (SSM) filtering, startin
 * **`run_singularity_test.py`**: Specifically tests the singularity robustness of EDH vs. LEDH vs. Kernel PFF when a target passes close to a sensor origin, creating an infinite Jacobian slope.
 * **`run_matrix_kernel_PFF.py`**: A dedicated runner for the Matrix-Valued Kernel PFF, comparing its tracking accuracy (RMSE) against analytic EDH and LEDH wrappers on the Range-Bearing model.
 * **`run_EDH_LEDH_KPFF_comparison.py`**: A comparative analysis script that aggregates results from EDH, LEDH, and KPFF runs to generate summary comparison plots.
+* **`run_dai22_experiments.py`**: Replicates Figure 2 from *Dai & Daum (2022)* by solving a **Boundary Value Problem (BVP)** to determine the optimal homotopy schedule $\beta(\lambda)$. The script uses a shooting method with bisection to minimize the log-determinant of the information matrix, effectively mitigating the numerical stiffness inherent in the Daum-Huang flow.
+* **`run_li17_experiments_dai22.py`**: Extends the *Li & Coates (2017)* acoustic tracking benchmark with the **Dai (2022)** optimized schedule, demonstrating improved OMAT and ESS stability in high-stiffness regimes.
+
+  
+#### Differentiable Particle Filter (DPF) Benchmarks
+* **`run_DPF_EOT_test.py`**: Analyzes the fundamental **bias-variance trade-off** in Entropic Optimal Transport (EOT) resampling. By varying the entropy parameter ($\epsilon$), it evaluates barycentric shrinkage, numerical stability "cliffs" in gradient flow, and Sinkhorn iteration convergence speed.
+* **`run_DPF_market_experiment.py`**: Evaluates Differentiable Particle Filters on **Stochastic Volatility** tracking for market dynamics. It benchmarks Neural (Transformer), Soft, and EOT (Sinkhorn) resampling strategies across GRU and LSTM transition models, measuring ELBO convergence and log-volatility RMSE.
+
+#### Bonus Questions & Parameter Estimation
+* **`bonus1a.py`**: Evaluates the Invertible PFPF-LEDH on the highly non-linear benchmark from *Andrieu et al. (2010)*, featuring quadratic observations and a cosine-modulated transition model.
+* **`bonus1b.py`**: Executes a comprehensive **PHMC vs. PMMH** grid-search benchmark for parameter estimation. It compares the efficiency (ESS/sec) and accuracy (MSE) of Differentiable Particle Flow gradients against standard Bootstrap Particle Filter likelihood estimates.
+      
+
 
 ### 📄 Documentation
 * **`Project_Report.pdf`**: The final submission document. It contains:
     * **Literature Review:** A comprehensive in-depth survey of Bayesian filter methods from Kalman Filters to modern Differentiable Particle Filters.
-    * **Methodology:** Mathematical derivations of the EDH, LEDH, and KPFF algorithms.
-    * **Results:** Detailed analysis of the experiments, including stability diagnostics (Jacobian conditioning), runtime comparisons, and error metrics.
+    * **Project tasks:** Detailed analysis of the experiments, including stability diagnostics (Jacobian conditioning), runtime comparisons, and error metrics. Includes both Parts I and II, and bonus questions 1-3. 
 
-## Implemented Methods (Part 1)
 
-### 1. Classical Linear-Gaussian Filtering
-* **Kalman Filter (KF):** A custom implementation for Multidimensional Linear-Gaussian SSMs (LGSSM).
-    * Includes **Joseph stabilized covariance updates** to ensure positive semi-definiteness.
-    * Analysis of filtering optimality and **numerical stability** (condition number analysis).
+## 📚 References
 
-### 2. Nonlinear & Non-Gaussian Baselines
-* **Models:** Implementation of challenging nonlinear environments (e.g., Stochastic Volatility or Range-Bearing Tracking).
-* **Extended Kalman Filter (EKF) & Unscented Kalman Filter (UKF):**
-    * Analysis of linearization limits and sigma-point approximation failures under strong nonlinearity.
-* **Standard Particle Filter (PF):**
-    * Custom implementation (avoiding `tfp` defaults) to study **particle degeneracy** and sample impoverishment.
-    * Performance benchmarking (Runtime, Peak Memory, RMSE) against EKF/UKF.
+The implementations and experiments in this repository are based on the following literature cited in the project report:
 
-### 3. Advanced Particle Flow Filters
-This section implements state-of-the-art flow-based methods to address the limitations of standard PFs in high dimensions.
+* **[ADH10]** Andrieu, C., Doucet, A., and Holenstein, R. "Particle markov chain monte carlo methods." *Journal of the Royal Statistical Society Series B: Statistical Methodology* (2010).
+* **[BBL08]** Bengtsson, T., Bickel, P., and Li, B. "Curse-of-dimensionality revisited: Collapse of the particle filter in very large scale systems." *Probability and statistics: Essays in honor of David A. Freedman* (2008).
+* **[CL23]** Chen, X. and Li, Y. "An overview of differentiable particle filters for data-adaptive sequential bayesian inference." *arXiv preprint arXiv:2302.09639* (2023).
+* **[CPM25]** Chaudhari, S., Pranav, S., and Moura, J. "Gradnetot: Learning optimal transport maps with gradnets." *arXiv preprint arXiv:2507.13191* (2025).
+* **[CTDD21]** Corenflos, A., Thornton, J., Deligiannidis, G., and Doucet, A. "Differentiable particle filtering via entropy-regularized optimal transport." *ICML* (2021).
+* **[DC12]** Ding, T. and Coates, M. "Implementation of the daum-huang exact-flow particle filter." *IEEE Statistical Signal Processing Workshop (SSP)* (2012).
+* **[DD21]** Dai, L. and Daum, F. "A new parameterized family of stochastic particle flow filters." *arXiv preprint arXiv:2103.09676* (2021).
+* **[DD22]** Dai, L. and Daum, F. "Stiffness mitigation in stochastic particle flow filters." *IEEE Transactions on Aerospace and Electronic Systems* (2022).
+* **[DDFG01]** Doucet, A., De Freitas, N., and Gordon, N. *Sequential monte carlo methods in practice*. Springer (2001).
+* **[DH08]** Daum, F. and Huang, J. "Nonlinear filters with particle flow." *Signal Processing, Sensor Fusion, and Target Recognition XVII* (2008).
+* **[DH11]** Daum, F. and Huang, J. "Particle degeneracy: root cause and solution." *Signal Processing, Sensor Fusion, and Target Recognition XX* (2011).
+* **[DHN10]** Daum, F., Huang, J., and Noushin, A. "Exact particle flow for nonlinear filters." *Signal processing, sensor fusion, and target recognition XIX* (2010).
+* **[DJ11]** Doucet, A. and Johansen, A. "A tutorial on particle filtering and smoothing: Fifteen years later." *The Oxford Handbook of Nonlinear Filtering* (2011).
+* **[GSS93]** Gordon, N., Salmond, D., and Smith, A. "Novel approach to nonlinear/non-gaussian bayesian state estimation." *IEE Proceedings F (Radar and Signal Processing)* (1993).
+* **[HVL21]** Hu, C. and Van Leeuwen, P. "A particle flow filter for high-dimensional system applications." *Quarterly Journal of the Royal Meteorological Society* (2021).
+* **[Jha25]** Jha, P. "From theory to application: A practical introduction to neural operators in scientific computing." *arXiv preprint arXiv:2503.05598* (2025).
+* **[JRB18]** Jonschkowski, R., Rastogi, D., and Brock, O. "Differentiable particle filters: End-to-end learning with algorithmic priors." *Robotics: Science and Systems (RSS)* (2018).
+* **[JU97]** Julier, S. and Uhlmann, J. "New extension of the kalman filter to nonlinear systems." *Signal processing, sensor fusion, and target recognition VI* (1997).
+* **[Kal60]** Kalman, R. "A new approach to linear filtering and prediction problems." *Journal of Basic Engineering* (1960).
+* **[KHL18]** Karkus, P., Hsu, D., and Lee, W. "Particle filter networks with application to visual localization." *Conference on Robot Learning (CoRL)* (2018).
+* **[LC17]** Li, Y. and Coates, M. "Particle filtering with invertible particle flow." *IEEE Transactions on Signal Processing* (2017).
+* **[Rei13]** Reich, S. "A nonparametric ensemble transform method for bayesian inference." *SIAM Journal on Scientific Computing* (2013).
+* **[SBBA08]** Snyder, C., Bengtsson, T., Bickel, P., and Anderson, J. "Obstacles to high-dimensional particle filtering." *Monthly Weather Review* (2008).
+* **[Sch66]** Schmidt, S. "Application of state-space methods to navigation problems." *Advances in Control Systems* (1966).
+* **[Vil21]** Villani, C. *Topics in optimal transportation*. American Mathematical Soc. (2021).
+* **[ZAS17]** Zaheer, M., Ahmed, A., and Smola, A. "Latent lstm allocation: Joint clustering and nonlinear dynamic modeling of sequence data." *ICML* (2017).
+* **[ZMJ20]** Zhu, M., Murphy, K., and Jonschkowski, R. "Towards differentiable resampling." *arXiv preprint arXiv:2004.11938* (2020).
+* **[ZZA+17]** Zheng, X., Zaheer, M., Ahmed, A., Wang, Y., Xing, E., and Smola, A. "State space lstm models with particle mcmc inference." *arXiv preprint arXiv:1711.11179* (2017).
 
-* **Daum-Huang Flows:**
-    * **Exact Daum-Huang (EDH):** Global log-homotopy flow.
-    * **Local Exact Daum-Huang (LEDH):** Pointwise flow for handling non-Gaussian structures.
-* **Invertible Particle Flow (PF-PF):**
-    * Implementation of the framework by **Li & Coates (2017)**, using flow as a deterministic proposal within Importance Sampling.
-* **Kernel-Embedded Particle Flow (KPFF):**
-    * Implementation in Reproducing Kernel Hilbert Space (RKHS) following **Hu & Van Leeuwen (2021)**.
-    * **Matrix-Valued Kernels:** Comparison between scalar and diagonal matrix-valued kernels to demonstrate the prevention of "marginal collapse" in high-dimensional systems with sparse observations.
 
-## Key Experiments & Analysis
-
-The project report includes detailed analysis on:
-1.  **Stability Diagnostics:** Jacobian conditioning and flow magnitude analysis during particle transport.
-2.  **Marginal Collapse:** Visualizations (replicating Hu(21) Figs 2-3) showing how matrix-valued kernels maintain diversity in observed subspaces.
-3.  **Comparative Study:** A rigorous comparison of EDH, LEDH, and KPFF across varying dimensions, nonlinearity levels, and observation sparsities.
-
-## References
-
-The implementations in this repository are based on the following literature:
-
-* **[Doucet(09)]** Doucet, A., & Johansen, A. M. "A tutorial on particle filtering and smoothing: Fifteen years later." (2009).
-* **[Daum(10)]** Daum, F., & Huang, J. "Exact particle flow for nonlinear filters." SPIE (2010).
-* **[Daum(11)]** Daum, F., & Huang, J. "Particle degeneracy: root cause and solution." SPIE (2011).
-* **[Li(17)]** Li, Y., & Coates, M. "Particle filtering with invertible particle flow." *IEEE Transactions on Signal Processing* (2017).
-* **[Hu(21)]** Hu, C., & Van Leeuwen, P. J. "A particle flow filter for high‐dimensional system applications." *Q.J.R. Meteorol. Soc.* (2021).
-
-## Getting Started
-
-1.  Clone the repository:
-    ```bash
-    git clone [https://github.com/ljw9510/2026MLCOE.git](https://github.com/ljw9510/2026MLCOE.git)
-    ```
-2.  Install dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
-3.  Navigate to the directory and run any experiment script:
-    ```bash
-    python run_li17_experiments.py
-    ```
 
 ---
 *Author: Joowon Lee*
